@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melody Mood - Hindi Song Recommender</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #1DB954;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: #ffffff;
+        }
+        #chat-box {
+            flex-grow: 1;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow-y: scroll;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #181818;
+        }
+        #user-input {
+            width: calc(100% - 50px);
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            background-color: #282828;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        #send-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background-color: #1DB954;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        #send-button:hover {
+            background-color: #1ed760;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .message {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .user-message {
+            text-align: right;
+            color: #1DB954;
+        }
+        .ai-message {
+            text-align: left;
+            color: #ffffff;
+        }
+        a {
+            color: #1DB954;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .song-recommendation {
+            background-color: #282828;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .song-recommendation a {
+            display: inline-block;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-music"></i> Song Recommender</h1>
+    </header>
+    <div class="container">
+        <div id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+<script>
+    $(document).ready(function() {
+        function addMessage(message, isUser) {
+            var messageHtml = isUser ? message : marked.parse(message);
+            var messageClass = isUser ? 'user-message' : 'ai-message';
+            $('#chat-box').append(`<div class="message ${messageClass}"><p>${messageHtml}</p></div>`);
+            $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);
+        }
+
+        function sendMessage(message) {
+            $.ajax({
+                url: '/chat',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({message: message}),
+                success: function(response) {
+                    addMessage(response.response, false);
+                    if (response.recommendationRequested) {
+                        addMessage("Great! To provide you with the best Hindi song recommendations, could you please tell me what mood you're in? (e.g., happy, sad, romantic, energetic, calm, angry, or nostalgic)", false);
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("Error in chat:", textStatus, errorThrown);
+                    addMessage("I'm sorry, but there was an error processing your request. Please try again later.", false);
+                }
+            });
+        }
+
+        $('#send-button').click(function() {
+            var userInput = $('#user-input').val();
+            if (userInput) {
+                addMessage(userInput, true);
+                sendMessage(userInput);
+                $('#user-input').val('');
+            }
+        });
+
+        $('#user-input').keypress(function(e) {
+            if (e.which == 13) {
+                $('#send-button').click();
+            }
+        });
+    });
+</script>
